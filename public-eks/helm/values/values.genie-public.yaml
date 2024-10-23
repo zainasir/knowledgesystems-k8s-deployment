@@ -1,0 +1,28 @@
+# Name of the deployment. This is used for pods, services, etc.
+name: cbioportal-backend-genie-public-helm
+
+replicas: 1
+
+labels: {
+  tags.datadoghq.com/env: eks-genie-public,
+  tags.datadoghq.com/service: cbioportal,
+  tags.datadoghq.com/version: 6.0.17,
+}
+
+podLabels: {
+  tags.datadoghq.com/env: eks-genie-public,
+  tags.datadoghq.com/service: cbioportal,
+  tags.datadoghq.com/version: 6.0.17,
+  tags.datadoghq.com/enabled: "true",
+}
+
+selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/cbioportal-backend-genie-public
+
+livenessProbe:
+  httpPath: /login.jsp
+
+serviceSelfLink: /api/v1/namespaces/default/services/cbioportal-backend-genie-public
+
+configMapRef: cbioportal-genie-public
+
+env: {}

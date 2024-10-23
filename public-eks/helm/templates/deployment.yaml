@@ -6,37 +6,49 @@ metadata:
   creationTimestamp: null
   generation: 1
   labels:
-    run: {{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
-  name: {{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
-  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/{{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
+    run: {{ .Values.backendGeniePublicHelm.name }}
+    {{- if .Values.backendGeniePublicHelm.labels }}
+    {{- toYaml .Values.backendGeniePublicHelm.labels | nindent 4 }}
+    {{- end }}
+  name: {{ .Values.backendGeniePublicHelm.name }}
+  selfLink: {{ .Values.backendGeniePublicHelm.selfLink }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.backendGeniePublicHelm.replicas }}
   selector:
     matchLabels:
-      run: {{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
+      run: {{ .Values.backendGeniePublicHelm.name }}
   strategy:
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 1
+      maxSurge: {{ .Values.backend.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.backend.rollingUpdate.maxUnavailable }}
     type: RollingUpdate
   template:
     metadata:
       creationTimestamp: null
       labels:
-        run: {{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
+        run: {{ .Values.backendGeniePublicHelm.name }}
+        {{- if .Values.backendGeniePublicHelm.podLabels }}
+        {{- toYaml .Values.backendGeniePublicHelm.podLabels | nindent 8 }}
+        {{- end }}
+      annotations:
+        admission.datadoghq.com/java-lib.version: v1.24.2
     spec:
       containers:
         - envFrom:
             - configMapRef:
-                name: cbioportal-genie-public-beta
-          image: cbioportal/cbioportal:demo-rfc80-poc-web-shenandoah
+                name: {{ .Values.backendGeniePublicHelm.configMapRef }}
+          env:
+            {{- if .Values.containers.env }}
+            {{- toYaml .Values.containers.env | nindent 12 }}
+            {{- end }}
+          image: cbioportal/cbioportal:6.0.17-web-shenandoah
           command: [ "java" ]
           args: [
             # from https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers/
             # "-Xms5g",
             # "-Xmx14g",
-            "-Xms100m",
-            "-Xmx20g",
+            "-Xms1g",
+            "-Xmx25g",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UseShenandoahGC",
             "-XX:ShenandoahUncommitDelay=1000",
@@ -74,11 +86,11 @@ spec:
             "--com.sun.management.jmxremote.authenticate=false",
             "--com.sun.management.jmxremote.local.only=false",
             "--java.rmi.server.hostname=localhost",
+            # "--logging.level.org.springframework.security=TRACE",
             # /enable remote debug
-            "--frontend.url=https://deploy-preview-4931.cancerrevue.org/",
-            "--enable_cross_study_expression=(studies)=>studies.filter(s=>/pan_can_atlas/.test(s.studyId) === false).length === 0",
+            "--frontend.url=https://frontend.cbioportal.org/",
             "--default_cross_cancer_study_session_id=5c8a7d55e4b046111fee2296",
-            "--quick_search.enabled=true",
+            "--quick_search.enabled=false",
             "--skin.footer= | <a href=\"https://www.aacr.org/professionals/research/aacr-project-genie\">AACR Project GENIE</a>",
             "--skin.right_nav.whats_new_blurb=",
             "--skin.title=cBioPortal for GENIE",
@@ -89,21 +101,22 @@ spec:
             "--skin.examples_right_column_html=<ul><li><a href=\"results?cancer_study_list=genie_public&tab_index=tab_visualize&case_set_id=genie_public_all&Action=Submit&gene_list=KRAS%250ANRAS%250AHRAS%250ABRAF\">RAS/RAF mutations across the GENIE cohort</a></li><li><a href=\"results?cancer_study_list=genie_public&genetic_profile_ids_PROFILE_MUTATION_EXTENDED=genie_public_mutations&data_priority=0&case_set_id=genie_public_all&case_ids=&patient_case_select=sample&gene_set_choice=user-defined-list&gene_list=ERBB2&clinical_param_selection=null&tab_index=tab_visualize&Action=Submit#mutations_details\">ERBB2 mutations</a></li><li><a href=\"results?cancer_study_list=genie_public&genetic_profile_ids_PROFILE_MUTATION_EXTENDED=genie_public_mutations&genetic_profile_ids_PROFILE_COPY_NUMBER_ALTERATION=genie_public_cna&data_priority=0&case_set_id=genie_public_cnaseq&case_ids=&patient_case_select=sample&gene_set_choice=user-defined-list&gene_list=BRAF%3A+MUT+%3D+V600&clinical_param_selection=null&tab_index=tab_visualize&Action=Submit&show_samples=false#pancancer_study_summary\">BRAF V600 mutations across cancer types</a></li><li><a href=\"patient?studyId=genie_public&caseId=GENIE-MSK-P-0001296\">Lung cancer case with post-treatment T790M EGFR mutation</a></li></ul>",
             "--skin.authorization_message=Welcome to the AACR Project GENIE cBioPortal.<br/><br/>If you are a new user, you will need to register and agree to the terms of use before you can use this portal. [<a href=\"https://docs.google.com/forms/d/e/1FAIpQLScwlJ9WRmAGZ08CCg8wYo8l8bcUmsAzJ09i1MKjBNtb_dLqIw/viewform\">First time user registration</a>].",
             "--app.name=genie-public-portal",
+            # connecting over dbcp
             "--dbconnector=dbcp",
-            "--authenticate=false",
+            "--authenticate=oauth2",
             "--spring.security.oauth2.client.registration.google.clientId=$(GOOGLE_PLUS_CONSUMER_KEY)",
             "--spring.security.oauth2.client.registration.google.clientSecret=$(GOOGLE_PLUS_CONSUMER_SECRET)",
             "--spring.security.oauth2.client.provider.google.user-name-attribute=email",
             "--security.cors.allowed-origins=*",
+            "--tomcat.catalina.scope=runtime",
             "--authorization=true",
             "--db.user=$(DB_USER)",
             "--db.password=$(DB_PASSWORD)",
             "--spring.datasource.driver-class-name=com.mysql.jdbc.Driver",
             "--spring.jpa.database-platform=org.hibernate.dialect.MySQL5InnoDBDialect",
-            "--spring.datasource.url=jdbc:mysql://$(DB_HOST):3306/$(DB_PORTAL_DB_NAME)?zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true",
+            "--spring.datasource.url=$(DB_CONNECTION_STRING)",
             "--spring.datasource.username=$(DB_USER)",
             "--spring.datasource.password=$(DB_PASSWORD)",
-            "--tomcat.catalina.scope=runtime",
             "--enable_cross_study_expression=(studies)=>studies.filter(s=>/pan_can_atlas/.test(s.studyId) === false).length === 0",
             "--show.transcript_dropdown=true",
             "--skin.show_tweet_button=$(SKIN_SHOW_TWEET_BUTTON)",
@@ -116,7 +129,7 @@ spec:
             "--skin.documentation.baseurl=https://raw.githubusercontent.com/cBioPortal/cbioportal/genie-documentation/docs/",
             "--skin.documentation.news=https://docs.cbioportal.org/news-genie/",
             "--skin.query.max_tree_depth=0",
-            "--session.service.url=https://session-service.cbioportal.org/api/sessions/genie_public_beta_portal/",
+            "--session.service.url=https://session-service.cbioportal.org/api/sessions/genie_portal/",
             "--session.service.origin=*",
             "--session.service.user=$(SESSION_SERVICE_USER_NAME)",
             "--session.service.password=$(SESSION_SERVICE_USER_PASSWORD)",
@@ -128,7 +141,7 @@ spec:
             "--googleplus.consumer.secret=$(GOOGLE_PLUS_CONSUMER_SECRET)",
             "--bitly.url=$(BITLY_URL)",
             "--bitly.access.token=$(BITLY_ACCESS_TOKEN)",
-            # "-Dsentryjs.frontend_project_endpoint=$(SENTRY_FRONTEND_DSN)",
+            # "--sentryjs.frontend_project_endpoint=$(SENTRY_FRONTEND_DSN)",
             "--sentry.dsn=$(SENTRY_DSN)",
             "--sentry.factory=org.cbioportal.logging.SentryClientFactory",
             "--db.suppress_schema_version_mismatch_errors=true",
@@ -139,6 +152,7 @@ spec:
             "--genomenexus.isoform_override_source=uniprot",
             "--show.genomenexus.annotation_sources=mutation_assessor",
             "--dat.unauth_users=anonymousUser",
+            "--dat.method=uuid",
             "--dat.uuid.max_number_per_user=1",
             "--dat.ttl_seconds=2592000",
             "--dat.uuid.revoke_other_tokens=true",
@@ -149,31 +163,22 @@ spec:
             "--spring.data.redis.host=$(REDIS_SESSION_HOST)",
             "--spring.data.redis.port=$(REDIS_SESSION_PORT)",
             "--spring.data.redis.password=$(REDIS_SESSION_PASSWORD)",
-            "--dat.method=none",
-            "--spring.datasource.mysql.url=$(DB_CONNECTION_STRING)",
-            "--spring.datasource.mysql.username=$(DB_USER)",
-            "--spring.datasource.mysql.password=$(DB_PASSWORD)",
-            "--spring.datasource.mysql.driver-class-name=com.mysql.jdbc.Driver",
-            "--spring.datasource.clickhouse.driver-class-name=com.clickhouse.jdbc.ClickHouseDriver",
-            "--spring.datasource.clickhouse.url=$(DB_CLICKHOUSE_CONNECTION_STRING)",
-            "--spring.datasource.clickhouse.username=$(DB_CLICKHOUSE_USER)",
-            "--spring.datasource.clickhouse.password=$(DB_CLICKHOUSE_PASSWORD)",
-
             # To enable redis session store, we need to set
             # spring.autoconfigure.exclude to a random value to override the
             # property in applications.properties.EXAMPLE
             "--spring.autoconfigure.exclude=dontexcludeanythingplz",
-            # redis cache settings (currently redis)
-            #"--cache.statistics_endpoint_enabled=false",
-            # "--logging.level.org.cbioportal.persistence=DEBUG",
+            # handles legacy swagger urls after upgrade
+            "--springdoc.swagger-ui.disable-swagger-default-url=true",
+            "--springdoc.swagger-ui.path=/api/swagger-ui",
+            "--springdoc.api-docs.path=/api/v3/api-docs",
+            # persistence cache settings (redis)
+            "--cache.statistics_endpoint_enabled=false",
             "--persistence.cache_type=redis",
             "--redis.leader_address=redis://cbioportal-genie-persistence-redis-master:6379",
             "--redis.follower_address=redis://cbioportal-genie-persistence-redis-replicas:6379",
-            "--redis.database=5",
-            "--redis.password=$(REDIS_PERSISTENCE_PASSWORD)",
+            "--redis.database=1",
             "--redis.clear_on_startup=true",
-            # misc frontend settings (this is NOT for backend persistence layer caching)
-            #"--enable_persistent_cache=true",
+            "--redis.password=$(REDIS_PERSISTENCE_PASSWORD)",
             # compress on client side
             "--enable_request_body_gzip_compression=true",
             # comparison settings
@@ -188,36 +193,36 @@ spec:
             "--server.tomcat.connection-timeout=20000",
             "--server.tomcat.max-http-response-header-size=16384",
             "--server.max-http-request-header-size=16384",
-            "--show.civic=true"
+            "--server.port=8888"
           ]
           imagePullPolicy: Always
-          #readinessProbe:
-          #  httpGet:
-          #    path: /api/health
-          #    port: 8080
-          #  initialDelaySeconds: 5
-          #  timeoutSeconds: 1
-          #  periodSeconds: 5
-          #  failureThreshold: 3
-          #livenessProbe:
-          #  httpGet:
-          #    path: /
-          #    port: 8080
-          #  initialDelaySeconds: 10
-          #  timeoutSeconds: 1
-          #  periodSeconds: 12
-          #  failureThreshold: 5
-          name: {{ .Values.cbioportalBackendGeniePublicBetaHelm.label }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8888
+            initialDelaySeconds: 45
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backendGeniePublicHelm.livenessProbe.httpPath }}
+              port: 8888
+            initialDelaySeconds: 180
+            timeoutSeconds: 1
+            periodSeconds: 12
+            failureThreshold: 5
+          name: {{ .Values.backendGeniePublicHelm.name }}
           ports:
-            - containerPort: 8080
+            - containerPort: 8888
               protocol: TCP
             - containerPort: 8849
               protocol: TCP
-          #resources:
-          #  requests:
-          #      memory: 11Gi
-          #  limits:
-          #      memory: 26Gi
+          resources:
+            requests:
+              memory: 11Gi
+            limits:
+              memory: 26Gi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       # run on eks-genie-cbioportal node group

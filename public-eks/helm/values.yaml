@@ -1,2 +1,12 @@
-cbioportalBackendGeniePublicBetaHelm:
-  label: cbioportal-backend-genie-public-beta-helm
+# Common config values
+backend:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 1
+
+containers:
+  env:
+    - name: DD_PROFILING_ENABLED
+      value: "true"
+    - name: DD_LOSS_INJECTION
+      value: "true"
