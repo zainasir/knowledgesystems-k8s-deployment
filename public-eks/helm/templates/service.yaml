@@ -2,14 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    run: {{ .Values.backendGeniePublicHelm.name }}
-  name: {{ .Values.backendGeniePublicHelm.name }}
-  selfLink: {{ .Values.backendGeniePublicHelm.serviceSelfLink }}
+    run: {{ .Values.name }}
+  # WARNING: when making a copy of this config file make sure to change the service name to avoid changing the production service
+  name: {{ .Values.serviceName }}
+  selfLink: {{ .Values.serviceSelfLink }}
 spec:
+  {{- if .Values.servicePorts }}
   ports:
-    - port: 80
-      name: http
-      targetPort: 8888
+    {{- toYaml .Values.servicePorts | nindent 4 }}
+  {{- end }}
   selector:
-    run: {{ .Values.backendGeniePublicHelm.name }}
+    run: {{ .Values.name }}
   type: ClusterIP

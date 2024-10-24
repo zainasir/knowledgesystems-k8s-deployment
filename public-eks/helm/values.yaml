@@ -1,10 +1,14 @@
+####
 # Common config values
-backend:
-  rollingUpdate:
-    maxSurge: 1
-    maxUnavailable: 1
+####
 
-containers:
+# Pod strategy
+rollingUpdate:
+  maxSurge: 2
+  maxUnavailable: 1
+
+# Pod container env vars
+container:
   env:
     - name: DD_PROFILING_ENABLED
       value: "true"

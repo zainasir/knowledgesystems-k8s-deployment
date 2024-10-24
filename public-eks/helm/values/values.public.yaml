@@ -1,0 +1,100 @@
+# Name of the deployment. This is used for pods, services, etc.
+name: cbioportal-spring-boot-helm
+
+# Deployment labels
+labels:
+  tags.datadoghq.com/env: eks-public
+  tags.datadoghq.com/service: cbioportal
+  tags.datadoghq.com/version: 6.0.17
+
+# Deployment self link
+# TODO: Derive selflink from macro
+selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/cbioportal-spring-boot-helm
+
+# Pod replicas
+replicas: 1
+
+# Pod labels
+podLabels:
+  tags.datadoghq.com/env: eks-public
+  tags.datadoghq.com/service: cbioportal
+  tags.datadoghq.com/version: 6.0.17
+  admission.datadoghq.com/enabled: "true"
+
+# Pod annotations
+podAnnotations:
+  admission.datadoghq.com/java-lib.version: v1.24.2
+
+# Pod Volumes
+podVolumes:
+  - name: cbioportal-frontend-config-volume
+    configMap:
+      name: single-cell-frontend-config
+
+# Pod Volume Mounts
+podVolumeMounts:
+  - name: cbioportal-frontend-config-volume
+    mountPath: /cbioportal/
+
+# Primary container
+container:
+  configMapRef: cbioportal-public6
+  image: cbioportal/cbioportal:6.0.17-web-shenandoah
+  cmd: "java"
+
+# Readiness Probe spec. Follow the kubernetes spec definition
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 8080
+  initialDelaySeconds: 45
+  timeoutSeconds: 1
+  periodSeconds: 5
+  failureThreshold: 3
+
+# Liveness Probe spec. Follow the kubernetes spec definition
+livenessProbe:
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 180
+  timeoutSeconds: 1
+  periodSeconds: 12
+  failureThreshold: 5
+
+# Container Ports
+containerPorts:
+  - containerPort: 8080
+    protocol: TCP
+  - containerPort: 8849
+    protocol: TCP
+
+# Container resources
+containerResources:
+  requests:
+    cpu: 1500m
+    memory: 15Gi
+  limits:
+    memory: 26Gi
+
+# Node group to run the Pods on
+nodeGroup: eks-public-cbioportal
+
+# Pod tolerations
+podTolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "eks-public-cbioportal"
+    effect: "NoSchedule"
+
+# Service Name
+serviceName: cbioportal-helm
+
+# TODO: Derive service self link from macro
+serviceSelfLink: /api/v1/namespaces/default/services/cbioportal-spring-boot-helm
+
+# Service ports
+servicePorts:
+  - port: 80
+    name: http
+    targetPort: 8080
