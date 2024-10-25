@@ -1,16 +1,3 @@
 ####
 # Common config values
 ####
-
-# Pod strategy
-rollingUpdate:
-  maxSurge: 2
-  maxUnavailable: 1
-
-# Pod container env vars
-container:
-  env:
-    - name: DD_PROFILING_ENABLED
-      value: "true"
-    - name: DD_LOSS_INJECTION
-      value: "true"

@@ -1,11 +1,8 @@
 # Name of the deployment. This is used for pods, services, etc.
-name: cbioportal-spring-boot-helm
+name: cbioportal-backend-master-helm
 
 # Deployment labels
-labels:
-  tags.datadoghq.com/env: eks-public
-  tags.datadoghq.com/service: cbioportal
-  tags.datadoghq.com/version: 6.0.17
+labels: []
 
 # Deployment self link
 selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/{{ .Values.name }}
@@ -15,19 +12,14 @@ replicas: 1
 
 # Pod strategy
 rollingUpdate:
-  maxSurge: 2
+  maxSurge: 1
   maxUnavailable: 1
 
 # Pod labels
-podLabels:
-  tags.datadoghq.com/env: eks-public
-  tags.datadoghq.com/service: cbioportal
-  tags.datadoghq.com/version: 6.0.17
-  admission.datadoghq.com/enabled: "true"
+podLabels: []
 
 # Pod annotations
-podAnnotations:
-  admission.datadoghq.com/java-lib.version: v1.24.2
+podAnnotations: []
 
 # Pod Volumes
 podVolumes:
@@ -43,19 +35,15 @@ podVolumeMounts:
 # Primary container
 container:
   configMapRef: cbioportal-public6
-  image: cbioportal/cbioportal:6.0.17-web-shenandoah
+  image: cbioportal/cbioportal:master-web-shenandoah
   cmd: "java"
-  env:
-    - name: DD_PROFILING_ENABLED
-      value: "true"
-    - name: DD_LOGS_INJECTION
-      value: "true"
+  env: []
 
 # Readiness Probe spec. Follow the kubernetes spec definition
 readinessProbe:
   httpGet:
     path: /api/health
-    port: 8080
+    port: 8888
   initialDelaySeconds: 45
   timeoutSeconds: 1
   periodSeconds: 5
@@ -65,7 +53,7 @@ readinessProbe:
 livenessProbe:
   httpGet:
     path: /
-    port: 8080
+    port: 8888
   initialDelaySeconds: 180
   timeoutSeconds: 1
   periodSeconds: 12
@@ -73,7 +61,7 @@ livenessProbe:
 
 # Container Ports
 containerPorts:
-  - containerPort: 8080
+  - containerPort: 8888
     protocol: TCP
   - containerPort: 8849
     protocol: TCP
@@ -81,10 +69,9 @@ containerPorts:
 # Container resources
 containerResources:
   requests:
-    cpu: 1500m
-    memory: 15Gi
+    memory: 2Gi
   limits:
-    memory: 26Gi
+    memory: 14Gi
 
 # Node group to run the Pods on
 nodeGroup: eks-public-cbioportal
@@ -97,13 +84,13 @@ podTolerations:
     effect: "NoSchedule"
 
 # Service Name
-serviceName: cbioportal-helm
+serviceName: cbioportal-master-helm
 
-# Service self link
+# Service Self Link
 serviceSelfLink: /api/v1/namespaces/default/services/{{ .Values.name }}
 
 # Service ports
 servicePorts:
   - port: 80
     name: http
-    targetPort: 8080
+    targetPort: 8888

@@ -11,7 +11,7 @@ metadata:
     {{- toYaml .Values.labels | nindent 4 }}
     {{- end }}
   name: {{ .Values.name }}
-  selfLink: {{ .Values.selfLink }}
+  selfLink: {{ tpl .Values.selfLink . }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:

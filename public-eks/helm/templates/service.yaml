@@ -5,7 +5,7 @@ metadata:
     run: {{ .Values.name }}
   # WARNING: when making a copy of this config file make sure to change the service name to avoid changing the production service
   name: {{ .Values.serviceName }}
-  selfLink: {{ .Values.serviceSelfLink }}
+  selfLink: {{ tpl .Values.serviceSelfLink . }}
 spec:
   {{- if .Values.servicePorts }}
   ports:
