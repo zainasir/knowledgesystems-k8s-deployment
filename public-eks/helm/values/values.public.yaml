@@ -7,9 +7,6 @@ labels:
   tags.datadoghq.com/service: cbioportal
   tags.datadoghq.com/version: 6.0.17
 
-# Deployment self link
-selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/{{ .Values.name }}
-
 # Pod replicas
 replicas: 1
 
@@ -28,17 +25,6 @@ podLabels:
 # Pod annotations
 podAnnotations:
   admission.datadoghq.com/java-lib.version: v1.24.2
-
-# Pod Volumes
-podVolumes:
-  - name: cbioportal-frontend-config-volume
-    configMap:
-      name: single-cell-frontend-config
-
-# Pod Volume Mounts
-podVolumeMounts:
-  - name: cbioportal-frontend-config-volume
-    mountPath: /cbioportal/
 
 # Primary container
 container:
@@ -86,21 +72,8 @@ containerResources:
   limits:
     memory: 26Gi
 
-# Node group to run the Pods on
-nodeGroup: eks-public-cbioportal
-
-# Pod tolerations
-podTolerations:
-  - key: "dedicated"
-    operator: "Equal"
-    value: "eks-public-cbioportal"
-    effect: "NoSchedule"
-
 # Service Name
 serviceName: cbioportal-helm
-
-# Service self link
-serviceSelfLink: /api/v1/namespaces/default/services/{{ .Values.name }}
 
 # Service ports
 servicePorts:

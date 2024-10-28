@@ -1,5 +1,5 @@
 # Name of the deployment. This is used for pods, services, etc.
-name: cbioportal-backend-master-helm
+name: cbioportal-backend-beta-helm
 
 # Deployment labels
 labels: []
@@ -20,34 +20,20 @@ podAnnotations: []
 
 # Primary container
 container:
-  configMapRef: cbioportal-public6
-  image: cbioportal/cbioportal:master-web-shenandoah
+  configMapRef: cbioportal-beta-v6
+  image: cbioportal/cbioportal:demo-rfc80-poc-web-shenandoah
   cmd: "java"
   env: []
 
 # Readiness Probe spec. Follow the kubernetes spec definition
-readinessProbe:
-  httpGet:
-    path: /api/health
-    port: 8888
-  initialDelaySeconds: 45
-  timeoutSeconds: 1
-  periodSeconds: 5
-  failureThreshold: 3
+readinessProbe: []
 
 # Liveness Probe spec. Follow the kubernetes spec definition
-livenessProbe:
-  httpGet:
-    path: /
-    port: 8888
-  initialDelaySeconds: 180
-  timeoutSeconds: 1
-  periodSeconds: 12
-  failureThreshold: 5
+livenessProbe: []
 
 # Container Ports
 containerPorts:
-  - containerPort: 8888
+  - containerPort: 8080
     protocol: TCP
   - containerPort: 8849
     protocol: TCP
@@ -57,10 +43,10 @@ containerResources:
   requests:
     memory: 2Gi
   limits:
-    memory: 14Gi
+    memory: 20Gi
 
 # Service Name
-serviceName: cbioportal-master-helm
+serviceName: cbioportal-backend-beta-helm
 
 # Service ports
 servicePorts:

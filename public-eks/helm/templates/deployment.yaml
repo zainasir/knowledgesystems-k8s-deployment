@@ -1,10 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  {{- if .Values.deploymentAnnotations }}
   annotations:
-    deployment.kubernetes.io/revision: "4"
-  creationTimestamp: null
-  generation: 1
+    {{- toYaml .Values.deploymentAnnotations | nindent 4 }}
+  {{- end}}
+  creationTimestamp: {{ .Values.creationTimestamp }}
+  generation: {{ .Values.generation }}
   labels:
     run: {{ .Values.name }}
     {{- if .Values.labels }}
@@ -24,7 +26,7 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
+      creationTimestamp: {{ .Values.creationTimestamp }}
       labels:
         run: {{ .Values.name }}
         {{- if .Values.podLabels }}
@@ -75,19 +77,30 @@ spec:
           resources:
             {{- toYaml .Values.containerResources | nindent 12 }}
           {{- end }}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
+          terminationMessagePath: {{ .Values.terminationMessagePath }}
+          terminationMessagePolicy: {{ .Values.terminationMessagePolicy }}
       # run on eks-public-cbioportal node group
       nodeSelector:
         eks.amazonaws.com/nodegroup: {{ .Values.nodeGroup }}
+      {{- if .Values.podTolerations }}
       tolerations:
-        - key: "dedicated"
-          operator: "Equal"
-          value: "eks-public-cbioportal"
-          effect: "NoSchedule"
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
-status: {}
+        {{- toYaml .Values.podTolerations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.dnsPolicy }}
+      dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
+      {{- if .Values.restartPolicy }}
+      restartPolicy: {{ .Values.restartPolicy }}
+      {{- end }}
+      {{- if .Values.schedulerName }}
+      schedulerName: {{ .Values.schedulerName }}
+      {{- end }}
+      {{- if .Values.securityContext }}
+      securityContext: {{ .Values.securityContext }}
+      {{- end }}
+      {{- if .Values.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- end }}
+{{- if .Values.status }}
+status: {{ .Values.status }}
+{{- end }}
